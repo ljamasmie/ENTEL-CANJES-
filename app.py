@@ -44,7 +44,7 @@ def load(raw: bytes):
 
 # ---------- Datos ----------
 DATA_DIR = Path(__file__).parent / "data"
-_xlsx = sorted(DATA_DIR.glob("*.xlsx"))
+_xlsx = sorted(DATA_DIR.glob("*.xlsx")) or sorted(Path(__file__).parent.glob("*.xlsx"))
 default = _xlsx[0] if _xlsx else DATA_DIR / "ticket_51020.xlsx"
 up = st.sidebar.file_uploader("Archivo Excel (abonos / canjes)", type="xlsx")
 if up is not None:
@@ -85,7 +85,8 @@ if f_com: C = C[C.comercio.isin(f_com)]
 if f_gift: C = C[C.giftcard.isin(f_gift)]
 
 # ---------- Header y KPIs ----------
-logo = Path(__file__).parent / "assets" / "logo_entel.png"
+_here = Path(__file__).parent
+logo = next((p for p in [_here / "assets" / "logo_entel.png", _here / "logo_entel.png"] if p.exists()), _here / "logo_entel.png")
 if logo.exists():
     lc, tc = st.columns([1, 14], vertical_alignment="center")
     lc.image(str(logo), width=56)

@@ -1,4 +1,4 @@
-"""Genera docs/index.html (dashboard web autocontenido) a partir del Excel.
+"""Genera index.html (dashboard web autocontenido) a partir del Excel.
 
 Uso:  python build_html.py data/ticket_51020.xlsx
 
@@ -53,7 +53,11 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         sys.exit("Uso: python build_html.py data/ticket_51020.xlsx")
     payload = build_payload(sys.argv[1])
-    tpl = (ROOT / "web" / "template.html").read_text(encoding="utf-8")
-    out = ROOT / "docs" / "index.html"
+    # Funciona con estructura de carpetas (web/, docs/) o con todo en la raíz
+    tpl_path = ROOT / "web" / "template.html"
+    if not tpl_path.exists():
+        tpl_path = ROOT / "template.html"
+    tpl = tpl_path.read_text(encoding="utf-8")
+    out = ROOT / "docs" / "index.html" if (ROOT / "docs").is_dir() else ROOT / "index.html"
     out.write_text(tpl.replace("__DATA__", json.dumps(payload, ensure_ascii=False, separators=(",", ":"))), encoding="utf-8")
     print(f"OK: {out}  ({len(payload['A'])} filas de abonos, {len(payload['C'])} de canjes agregadas)")
