@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dashboard de Abonos y Canjes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FFFFFF; --surface:#F5F7FF; --ink:#101528; --muted:#5E6478; --line:#E3E7F3;
+  --azul:#002EFF; --azul-soft:#E6ECFF; --naranjo:#FF3D00; --celeste:#8FA5FF; --celeste-soft:#EEF2FF; --ink-series:#002EFF;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0B1026; --surface:#121936; --ink:#EEF1FA; --muted:#9AA3BF; --line:#232C4D;
+  --azul:#5C7BFF; --azul-soft:#16214A; --naranjo:#FF6A33; --celeste:#7F95E8; --celeste-soft:#16214A; --ink-series:#6E8AFF;}}
+:root[data-theme="dark"]{
+  --bg:#0B1026; --surface:#121936; --ink:#EEF1FA; --muted:#9AA3BF; --line:#232C4D;
+  --azul:#5C7BFF; --azul-soft:#16214A; --naranjo:#FF6A33; --celeste:#7F95E8; --celeste-soft:#16214A; --ink-series:#6E8AFF;}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 80px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Onest",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:15px;line-height:1.5;font-variant-numeric:tabular-nums}
+.wrap{max-width:1240px;margin:0 auto;padding:0 28px}
+header.top{padding-top:40px;padding-bottom:20px;display:flex;gap:20px;align-items:center}
+.brand{width:56px;height:auto;flex:none}
+.top-txt{min-width:0}
+h1{font-size:32px;line-height:1.15;font-weight:700;margin:0;letter-spacing:-0.02em;color:var(--ink)}
+.sub{color:var(--muted);font-size:17px;margin:6px 0 0}
+.period{color:var(--muted);font-size:13px;margin-top:14px}
+/* Filtros */
+.filters{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+.filters .wrap{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;padding-top:12px;padding-bottom:12px}
+.f{display:flex;flex-direction:column;gap:3px;min-width:0}
+.f label,.f .lbl{font-size:12px;color:var(--muted);font-weight:500}
+.f input,.f select,.ms>summary{font:inherit;font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;height:36px;padding:0 10px}
+.f input[type=date]{width:140px}
+.f select{min-width:96px}
+.ms{position:relative}
+.ms>summary{list-style:none;display:flex;align-items:center;gap:8px;cursor:pointer;min-width:132px;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ms>summary::-webkit-details-marker{display:none}
+.ms>summary::after{content:"";margin-left:auto;border:4px solid transparent;border-top-color:var(--muted);transform:translateY(2px)}
+.ms[data-active="1"]>summary{border-color:var(--azul);color:var(--azul)}
+.ms .panel{position:absolute;top:40px;left:0;width:290px;max-height:360px;display:flex;flex-direction:column;background:var(--bg);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 32px rgba(0,46,255,.10);z-index:30}
+.ms .panel input[type=search]{margin:10px;height:32px;border:1px solid var(--line);border-radius:6px;padding:0 8px;font:inherit;font-size:13px;background:var(--bg);color:var(--ink)}
+.ms .acts{display:flex;gap:12px;padding:0 12px 6px;font-size:12px}
+.ms .acts button{background:none;border:0;padding:0;color:var(--azul);cursor:pointer;font:inherit}
+.ms .opts{overflow:auto;padding:0 6px 8px}
+.ms .opts label{display:flex;gap:8px;align-items:center;padding:5px 6px;border-radius:6px;font-size:13px;cursor:pointer}
+.ms .opts label:hover{background:var(--surface)}
+.ms input[type=checkbox]{accent-color:var(--azul)}
+.btn{font:inherit;font-size:13px;height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.btn:hover{border-color:var(--ink)}
+:focus-visible{outline:2px solid var(--naranjo);outline-offset:2px}
+.notice{display:none;margin:14px 0 0;padding:10px 14px;border-left:3px solid var(--celeste);background:var(--celeste-soft);border-radius:0 8px 8px 0;font-size:13px;color:var(--ink)}
+.notice.on{display:block}
+/* KPIs */
+.kpi-main{display:grid;grid-template-columns:1fr 1fr 1.15fr;margin-top:32px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.kpi-main>div{padding:26px 28px 24px 0}
+.kpi-main>div+div{padding-left:28px;border-left:1px solid var(--line)}
+.k-l{font-size:14px;color:var(--muted);font-weight:500}
+.k-v{font-size:44px;font-weight:700;letter-spacing:-0.025em;line-height:1.1;margin-top:6px}
+.k-s{font-size:13px;color:var(--muted);margin-top:6px}
+.k-rate .k-v{color:var(--azul);font-size:56px}
+.k-formula{font-size:12px;color:var(--muted);margin-top:4px}
+.kpi-sec{display:grid;grid-template-columns:repeat(4,1fr);gap:0}
+.kpi-sec>div{padding:18px 20px 18px 0}
+.kpi-sec>div+div{padding-left:20px;border-left:1px solid var(--line)}
+.kpi-sec .k-v{font-size:24px}
+/* Secciones */
+section{padding:52px 0 8px}
+h2{font-size:22px;font-weight:600;margin:0;letter-spacing:-0.01em}
+.lead{color:var(--muted);margin:4px 0 20px;font-size:14px;max-width:78ch}
+.grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:36px}
+.chart{position:relative;height:320px}
+.chart.tall{height:380px}
+.ctitle{font-size:14px;font-weight:600;margin:0 0 10px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{font:inherit;font-size:13px;border:0;background:var(--bg);color:var(--muted);padding:6px 12px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.row-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+/* Insights */
+.insights{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:1fr 1fr;gap:0 40px}
+.insights li{padding:14px 0 14px 18px;border-top:1px solid var(--line);position:relative;font-size:15px}
+.insights li::before{content:"";position:absolute;left:0;top:23px;width:7px;height:7px;border-radius:50%;background:var(--naranjo)}
+.insights b{color:var(--azul);font-weight:600}
+/* Tablas */
+.tbl-wrap{overflow-x:auto;border-top:1px solid var(--line)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{font-weight:500;color:var(--muted);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none;font-size:13px}
+th.num,td.num{text-align:right}
+th[data-sort]::after{content:" ↕";opacity:.35}
+th[data-dir="asc"]::after{content:" ↑";opacity:1;color:var(--azul)}
+th[data-dir="desc"]::after{content:" ↓";opacity:1;color:var(--azul)}
+td{padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+tr:hover td{background:var(--surface)}
+td.na{color:var(--muted)}
+.bar-cell{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+.bar-cell i{display:block;height:6px;border-radius:3px;background:var(--celeste);min-width:1px}
+.pager{display:flex;gap:10px;align-items:center;justify-content:flex-end;padding:12px 0;font-size:13px;color:var(--muted)}
+.tbl-tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.tbl-tools input{font:inherit;font-size:13px;height:34px;border:1px solid var(--line);border-radius:8px;padding:0 10px;background:var(--bg);color:var(--ink)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:0 24px;align-content:start}
+.stats>div{padding:14px 0;border-top:1px solid var(--line)}
+.stats .k-v{font-size:22px}
+.muted{color:var(--muted)}
+.note-s{font-size:12px;color:var(--muted);margin-top:10px}
+details.method{margin:56px 0 0;border-top:1px solid var(--line);padding:18px 0 48px}
+details.method summary{cursor:pointer;font-weight:600}
+details.method ul{color:var(--muted);font-size:13.5px;max-width:90ch;padding-left:18px}
+details.method li{margin:6px 0}
+.empty{padding:40px 0;color:var(--muted);text-align:center}
+@media (max-width:900px){
+  .kpi-main{grid-template-columns:1fr}
+  .kpi-main>div+div{border-left:0;padding-left:0;border-top:1px solid var(--line)}
+  .kpi-sec{grid-template-columns:1fr 1fr}
+  .kpi-sec>div:nth-child(3){border-left:0;padding-left:0}
+  .grid2,.insights{grid-template-columns:1fr}
+  .k-v{font-size:36px}.k-rate .k-v{font-size:44px}
+  .wrap{padding:0 18px}
+  .f input[type=date]{width:136px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<header class="top wrap">
+  <img class="brand" src="data:image/png;base64,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" alt="Entel">
+  <div class="top-txt">
+  <h1>Dashboard de Abonos y Canjes</h1>
+  <p class="sub">Análisis de utilización, comercios y comportamiento de canje</p>
+  <div class="period" id="period"></div>
+  </div>
+</header>
+
+<div class="filters" role="region" aria-label="Filtros">
+  <div class="wrap">
+    <div class="f"><label for="fDesde">Fecha desde</label><input type="date" id="fDesde"></div>
+    <div class="f"><label for="fHasta">Fecha hasta</label><input type="date" id="fHasta"></div>
+    <div class="f"><label for="fAnio">Año</label><select id="fAnio"></select></div>
+    <div class="f"><label for="fMes">Mes</label><select id="fMes"></select></div>
+    <div class="f"><span class="lbl">Canal (PDV)</span><details class="ms" id="msCanal"></details></div>
+    <div class="f"><span class="lbl">Comercio</span><details class="ms" id="msComercio"></details></div>
+    <div class="f"><span class="lbl">Red giftcard</span><details class="ms" id="msGift"></details></div>
+    <div class="f"><span class="lbl">Estado del abono</span><details class="ms" id="msEstado"></details></div>
+    <button class="btn" id="reset">Limpiar filtros</button>
+  </div>
+</div>
+
+<main class="wrap">
+  <div class="notice" id="noticeComercio">Hay un filtro de comercio o red giftcard activo. Los abonos no registran comercio, así que el total abonado no cambia con este filtro: el % de canje muestra lo canjeado en la selección sobre todo lo abonado.</div>
+  <div class="notice" id="noticeEstado">Hay un filtro de estado del abono activo. El estado solo existe en los abonos, así que los canjes no cambian con este filtro.</div>
+
+  <div class="kpi-main">
+    <div><div class="k-l">Total abonado</div><div class="k-v" id="kAb"></div><div class="k-s" id="kAbFull"></div></div>
+    <div><div class="k-l">Total canjeado</div><div class="k-v" id="kCj"></div><div class="k-s" id="kCjFull"></div></div>
+    <div class="k-rate"><div class="k-l">% de canje</div><div class="k-v" id="kRate"></div><div class="k-formula">Total canjeado ÷ Total abonado × 100</div></div>
+  </div>
+  <div class="kpi-sec">
+    <div><div class="k-l" id="kSaldoL">Saldo no canjeado</div><div class="k-v" id="kSaldo"></div><div class="k-s" id="kSaldoS">Abonado − Canjeado</div></div>
+    <div><div class="k-l">Nº de abonos</div><div class="k-v" id="kNAb"></div><div class="k-s" id="kNAbS"></div></div>
+    <div><div class="k-l">Nº de canjes</div><div class="k-v" id="kNCj"></div><div class="k-s" id="kNCjS"></div></div>
+    <div><div class="k-l">Ticket promedio de canje</div><div class="k-v" id="kTicket"></div><div class="k-s">Total canjeado ÷ Nº de canjes</div></div>
+  </div>
+
+  <section id="s-insights">
+    <h2>Insights principales</h2>
+    <p class="lead">Calculados a partir de los datos filtrados. Se actualizan con cada cambio de filtro.</p>
+    <ul class="insights" id="insights"></ul>
+  </section>
+
+  <section id="s-evol">
+    <div class="row-head">
+      <div><h2>Evolución temporal</h2><p class="lead" style="margin-bottom:0">Monto abonado y canjeado en el tiempo.</p></div>
+      <div class="seg" id="gran"><button data-g="dia" aria-pressed="false">Día</button><button data-g="semana" aria-pressed="false">Semana</button><button data-g="mes" aria-pressed="true">Mes</button></div>
+    </div>
+    <div class="chart tall"><canvas id="cEvol" aria-label="Evolución de abonos y canjes"></canvas></div>
+  </section>
+
+  <section id="s-rate">
+    <h2>% de canje</h2>
+    <p class="lead">Canjeado ÷ Abonado en cada corte. Se muestra como dato objetivo: un valor sobre 100% indica que en ese corte se canjeó más de lo que se abonó (por ejemplo, canjes de saldo abonado en meses anteriores).</p>
+    <div class="grid2">
+      <div><p class="ctitle">Por mes</p><div class="chart"><canvas id="cRateMes" aria-label="% de canje por mes"></canvas></div></div>
+      <div><p class="ctitle">Por canal (PDV)</p><div class="chart"><canvas id="cRateCanal" aria-label="% de canje por canal"></canvas></div></div>
+    </div>
+    <p class="note-s">Por comercio no es posible calcular un % de canje: los abonos se cargan como puntos genéricos, sin comercio asociado. En su lugar, la sección siguiente muestra la participación de cada comercio en el total canjeado.</p>
+  </section>
+
+  <section id="s-comercio">
+    <h2>Comportamiento por comercio</h2>
+    <p class="lead">Dónde se utilizan los puntos. Barras: monto canjeado de los 15 principales comercios; línea: participación acumulada sobre el total canjeado.</p>
+    <div class="chart tall"><canvas id="cComercio" aria-label="Ranking de comercios"></canvas></div>
+    <div class="row-head" style="margin-top:28px">
+      <p class="ctitle" style="margin:0">Ranking de comercios</p>
+      <div class="tbl-tools"><input type="search" id="qCom" placeholder="Buscar comercio" aria-label="Buscar comercio"></div>
+    </div>
+    <div class="tbl-wrap"><table id="tCom"></table></div><div class="pager" id="pCom"></div>
+  </section>
+
+  <section id="s-canal">
+    <h2>Comportamiento por canal (PDV)</h2>
+    <p class="lead">El archivo no incluye sucursales de comercio. La dimensión más cercana es el punto de venta (PDV) asignado a cada abono. Cada canje se atribuye al PDV donde el usuario recibió más puntos.</p>
+    <div class="row-head">
+      <p class="ctitle" style="margin:0">Ranking de canales</p>
+      <div class="seg" id="rankCanal"><button data-k="cj" aria-pressed="true">Mayor monto canjeado</button><button data-k="rate" aria-pressed="false">Mayor % de canje</button></div>
+    </div>
+    <div class="tbl-wrap"><table id="tCanal"></table></div>
+  </section>
+
+  <section id="s-dist">
+    <h2>Distribución de canjes</h2>
+    <p class="lead">Cantidad de canjes según tramo de monto.</p>
+    <div class="grid2">
+      <div class="chart"><canvas id="cHist" aria-label="Distribución de montos de canje"></canvas></div>
+      <div class="stats">
+        <div><div class="k-l">Promedio</div><div class="k-v" id="sAvg"></div></div>
+        <div><div class="k-l">Mediana</div><div class="k-v" id="sMed"></div></div>
+        <div><div class="k-l">Mínimo</div><div class="k-v" id="sMin"></div></div>
+        <div><div class="k-l">Máximo</div><div class="k-v" id="sMax"></div></div>
+        <div><div class="k-l">Monto más frecuente</div><div class="k-v" id="sMode"></div></div>
+        <div><div class="k-l">Comercios con canjes</div><div class="k-v" id="sNCom"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="s-tabla">
+    <div class="row-head">
+      <div><h2>Tabla detallada</h2><p class="lead" style="margin-bottom:0">Datos agregados. Haz clic en una columna para ordenar.</p></div>
+      <div class="tbl-tools">
+        <label class="muted" for="gTabla" style="font-size:13px">Agrupar por</label>
+        <select id="gTabla" class="btn">
+          <option value="mes,canal">Mes y canal</option>
+          <option value="mes">Mes</option>
+          <option value="canal">Canal</option>
+          <option value="mes,comercio">Mes y comercio</option>
+          <option value="comercio">Comercio</option>
+          <option value="campana">Concepto de abono</option>
+        </select>
+        <input type="search" id="qTabla" placeholder="Buscar" aria-label="Buscar en tabla">
+      </div>
+    </div>
+    <div class="tbl-wrap"><table id="tDet"></table></div><div class="pager" id="pDet"></div>
+  </section>
+
+  <details class="method">
+    <summary>Metodología y calidad de datos</summary>
+    <ul id="method"></ul>
+  </details>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<script>
+const D = __DATA__;
+const MESES=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+const MES_C=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+const $=id=>document.getElementById(id);
+const nf=new Intl.NumberFormat("es-CL");
+const fCLP=n=>"$"+nf.format(Math.round(n));
+const fShort=n=>{const a=Math.abs(n),s=n<0?"−":"";
+  if(a>=1e6)return s+"$"+(a/1e6).toLocaleString("es-CL",{maximumFractionDigits:1})+" M";
+  if(a>=1e3)return s+"$"+(a/1e3).toLocaleString("es-CL",{maximumFractionDigits:1})+" mil";
+  return s+"$"+nf.format(Math.round(a));};
+const fPct=x=>(x==null||!isFinite(x))?"—":(x*100).toLocaleString("es-CL",{minimumFractionDigits:1,maximumFractionDigits:1})+"%";
+const fN=n=>nf.format(n);
+const mLabel=k=>{const[y,m]=k.split("-");return MES_C[+m-1]+" "+y.slice(2)};
+
+// Metadatos por día
+const DAY=D.dias.map(s=>{const d=new Date(s+"T00:00:00");const y=d.getFullYear(),m=d.getMonth()+1;
+  const wd=(d.getDay()+6)%7;const w=new Date(d);w.setDate(d.getDate()-wd);
+  const wk=w.getFullYear()+"-"+String(w.getMonth()+1).padStart(2,"0")+"-"+String(w.getDate()).padStart(2,"0");
+  return{s,y,m,mk:s.slice(0,7),wk};});
+const minDay=D.dias[0],maxDay=D.dias[D.dias.length-1];
+
+// Estado
+const S={desde:minDay,hasta:maxDay,anio:"",mes:"",
+  canal:new Set(D.canales.map((_,i)=>i)),com:new Set(D.comercios.map((_,i)=>i)),
+  gift:new Set(D.giftcards.map((_,i)=>i)),est:new Set(D.estados.map((_,i)=>i)),gran:"mes",rankCanal:"cj"};
+
+// ---------- Multi-select ----------
+function multiSelect(el,labels,key,allLabel){
+  el.innerHTML=`<summary></summary><div class="panel"><input type="search" placeholder="Buscar"><div class="acts"><button type="button" data-a="all">Todos</button><button type="button" data-a="none">Ninguno</button></div><div class="opts"></div></div>`;
+  const opts=el.querySelector(".opts"),q=el.querySelector("input[type=search]"),sum=el.querySelector("summary");
+  const order=labels.map((l,i)=>i).sort((a,b)=>labels[a].localeCompare(labels[b],"es"));
+  opts.innerHTML=order.map(i=>`<label><input type="checkbox" value="${i}" checked> ${labels[i]}</label>`).join("");
+  const sync=()=>{const n=S[key].size;el.dataset.active=n<labels.length?"1":"0";
+    sum.textContent=n===labels.length?allLabel:n===0?"Ninguno":n===1?labels[[...S[key]][0]]:n+" seleccionados";};
+  el.sync=()=>{opts.querySelectorAll("input").forEach(c=>c.checked=S[key].has(+c.value));sync();};
+  opts.addEventListener("change",e=>{const v=+e.target.value;e.target.checked?S[key].add(v):S[key].delete(v);sync();render();});
+  el.querySelector(".acts").addEventListener("click",e=>{const a=e.target.dataset.a;if(!a)return;
+    opts.querySelectorAll("label").forEach(l=>{if(l.style.display==="none")return;const c=l.querySelector("input");
+      c.checked=a==="all";a==="all"?S[key].add(+c.value):S[key].delete(+c.value);});sync();render();});
+  q.addEventListener("input",()=>{const t=q.value.toLowerCase();opts.querySelectorAll("label").forEach(l=>l.style.display=l.textContent.toLowerCase().includes(t)?"":"none");});
+  sync();
+}
+document.addEventListener("click",e=>{document.querySelectorAll("details.ms[open]").forEach(d=>{if(!d.contains(e.target))d.open=false;});});
+
+// ---------- Filtros ----------
+function initFilters(){
+  $("fDesde").value=minDay;$("fHasta").value=maxDay;
+  for(const i of["fDesde","fHasta"]){$(i).min=minDay;$(i).max=maxDay;}
+  const years=[...new Set(DAY.map(d=>d.y))];
+  $("fAnio").innerHTML=`<option value="">Todos</option>`+years.map(y=>`<option>${y}</option>`).join("");
+  $("fMes").innerHTML=`<option value="">Todos</option>`+MESES.map((m,i)=>`<option value="${i+1}">${m}</option>`).join("");
+  $("fDesde").onchange=e=>{S.desde=e.target.value||minDay;render();};
+  $("fHasta").onchange=e=>{S.hasta=e.target.value||maxDay;render();};
+  $("fAnio").onchange=e=>{S.anio=e.target.value;render();};
+  $("fMes").onchange=e=>{S.mes=e.target.value;render();};
+  multiSelect($("msCanal"),D.canales,"canal","Todos los canales");
+  multiSelect($("msComercio"),D.comercios,"com","Todos los comercios");
+  multiSelect($("msGift"),D.giftcards,"gift","Todas las redes");
+  multiSelect($("msEstado"),D.estados,"est","Todos los estados");
+  $("reset").onclick=()=>{S.desde=minDay;S.hasta=maxDay;S.anio="";S.mes="";
+    S.canal=new Set(D.canales.map((_,i)=>i));S.com=new Set(D.comercios.map((_,i)=>i));
+    S.gift=new Set(D.giftcards.map((_,i)=>i));S.est=new Set(D.estados.map((_,i)=>i));
+    $("fDesde").value=minDay;$("fHasta").value=maxDay;$("fAnio").value="";$("fMes").value="";
+    ["msCanal","msComercio","msGift","msEstado"].forEach(i=>$(i).sync());render();};
+}
+
+// ---------- Agregación ----------
+function compute(){
+  const dayOk=DAY.map(d=>d.s>=S.desde&&d.s<=S.hasta&&(!S.anio||d.y==S.anio)&&(!S.mes||d.m==S.mes));
+  const A=D.A.filter(r=>dayOk[r[0]]&&S.canal.has(r[1])&&S.est.has(r[2]));
+  const C=D.C.filter(r=>dayOk[r[0]]&&S.canal.has(r[1])&&S.com.has(r[2])&&S.gift.has(r[3]));
+  let ab=0,nab=0,cj=0,ncj=0;
+  for(const r of A){ab+=r[4];nab+=r[5];}
+  for(const r of C){cj+=r[4]*r[5];ncj+=r[5];}
+  return{A,C,ab,nab,cj,ncj};
+}
+function groupBy(rows,keyFn,valFn,init){const m=new Map();for(const r of rows){const k=keyFn(r);let o=m.get(k);if(!o){o=init();m.set(k,o);}valFn(o,r);}return m;}
+
+// ---------- Tablas ----------
+const TBL={};
+function renderTable(id,cols,rows,opt={}){
+  const st=TBL[id]||(TBL[id]={sort:opt.sort,dir:opt.dir||"desc",page:0});
+  if(opt.forceSort){st.sort=opt.forceSort;st.dir="desc";}
+  const t=$(id);
+  const col=cols.find(c=>c.key===st.sort);
+  if(col){rows=[...rows].sort((a,b)=>{let x=a[st.sort],y=b[st.sort];
+    if(x==null)return 1;if(y==null)return -1;
+    const r=typeof x==="string"?x.localeCompare(y,"es"):x-y;return st.dir==="asc"?r:-r;});}
+  const ps=opt.pageSize||rows.length||1,pages=Math.max(1,Math.ceil(rows.length/ps));
+  if(st.page>=pages)st.page=0;
+  const view=rows.slice(st.page*ps,st.page*ps+ps);
+  t.innerHTML=`<thead><tr>${cols.map(c=>`<th class="${c.num?"num":""}" data-sort="${c.key}" ${st.sort===c.key?`data-dir="${st.dir}"`:""}>${c.label}</th>`).join("")}</tr></thead>
+  <tbody>${view.length?view.map(r=>`<tr>${cols.map(c=>{const v=r[c.key];
+    if(v==null)return`<td class="${c.num?"num":""} na">—</td>`;
+    const txt=c.fmt?c.fmt(v):v;
+    if(c.bar&&opt.barMax)return`<td class="num"><span class="bar-cell">${txt}<i style="width:${Math.max(1,70*v/opt.barMax)}px"></i></span></td>`;
+    return`<td class="${c.num?"num":""}">${txt}</td>`;}).join("")}</tr>`).join(""):`<tr><td colspan="${cols.length}" class="empty">No hay datos para los filtros seleccionados. Prueba ampliando el rango de fechas o limpiando filtros.</td></tr>`}</tbody>`;
+  t.querySelectorAll("th").forEach(th=>th.onclick=()=>{const k=th.dataset.sort;
+    if(st.sort===k)st.dir=st.dir==="desc"?"asc":"desc";else{st.sort=k;st.dir=typeof rows[0]?.[k]==="string"?"asc":"desc";}
+    st.page=0;opt.onSort&&opt.onSort();render();});
+  if(opt.pager){const p=$(opt.pager);
+    p.innerHTML=rows.length>ps?`<span>${st.page*ps+1}–${Math.min(rows.length,(st.page+1)*ps)} de ${fN(rows.length)}</span><button class="btn" data-p="-1" ${st.page===0?"disabled":""}>Anterior</button><button class="btn" data-p="1" ${st.page>=pages-1?"disabled":""}>Siguiente</button>`:(rows.length?`<span>${fN(rows.length)} filas</span>`:"");
+    p.querySelectorAll("button").forEach(b=>b.onclick=()=>{st.page+=+b.dataset.p;render();});}
+}
+
+// ---------- Charts ----------
+let CH={};const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+function baseOpts(){return{responsive:true,maintainAspectRatio:false,animation:{duration:250},
+  interaction:{mode:"index",intersect:false},
+  plugins:{legend:{position:"top",align:"start",labels:{boxWidth:10,boxHeight:10,usePointStyle:true,color:css("--ink"),font:{family:"Onest",size:12}}},
+    tooltip:{backgroundColor:css("--ink"),titleColor:css("--bg"),bodyColor:css("--bg"),padding:10,titleFont:{family:"Onest"},bodyFont:{family:"Onest"}}},
+  scales:{x:{grid:{display:false},ticks:{color:css("--muted"),font:{family:"Onest",size:11},maxRotation:0,autoSkipPadding:14},border:{color:css("--line")}},
+    y:{grid:{color:css("--line")},border:{display:false},ticks:{color:css("--muted"),font:{family:"Onest",size:11},callback:v=>fShort(v)}}}};}
+function initCharts(){
+  Chart.defaults.font.family='"Onest",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+  const o=baseOpts();
+  CH.evol=new Chart($("cEvol"),{type:"line",data:{labels:[],datasets:[
+    {label:"Abonado",data:[],borderColor:css("--celeste"),backgroundColor:css("--celeste")+"33",fill:true,cubicInterpolationMode:"monotone",tension:.3,pointRadius:0,borderWidth:2},
+    {label:"Canjeado",data:[],borderColor:css("--ink-series"),backgroundColor:"transparent",cubicInterpolationMode:"monotone",tension:.3,pointRadius:0,borderWidth:2}]},
+    options:{...o,plugins:{...o.plugins,tooltip:{...o.plugins.tooltip,callbacks:{label:c=>`${c.dataset.label}: ${fCLP(c.parsed.y)}`}}}}});
+  const o2=baseOpts();
+  CH.rateMes=new Chart($("cRateMes"),{type:"bar",data:{labels:[],datasets:[
+    {type:"line",label:"% acumulado del período",data:[],borderColor:css("--naranjo"),borderDash:[5,4],pointRadius:0,borderWidth:1.5,fill:false},
+    {label:"% de canje mensual",data:[],backgroundColor:css("--celeste"),borderRadius:3,maxBarThickness:22}]},
+    options:{...o2,scales:{...o2.scales,y:{...o2.scales.y,ticks:{...o2.scales.y.ticks,callback:v=>v+"%"}}},
+      plugins:{...o2.plugins,tooltip:{...o2.plugins.tooltip,callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y.toLocaleString("es-CL",{maximumFractionDigits:1})}%`}}}}});
+  const o3=baseOpts();
+  CH.rateCanal=new Chart($("cRateCanal"),{type:"bar",data:{labels:[],datasets:[{label:"% de canje",data:[],backgroundColor:css("--celeste"),borderRadius:3,maxBarThickness:26}]},
+    options:{...o3,indexAxis:"y",interaction:{mode:"nearest",axis:"y",intersect:false},plugins:{...o3.plugins,legend:{display:false},tooltip:{...o3.plugins.tooltip,callbacks:{label:c=>`% de canje: ${c.parsed.x.toLocaleString("es-CL",{maximumFractionDigits:1})}%`}}},
+      scales:{x:{...o3.scales.y,ticks:{...o3.scales.y.ticks,callback:v=>v+"%"}},y:{...o3.scales.x,ticks:{...o3.scales.x.ticks,autoSkip:false}}}}});
+  const o4=baseOpts();
+  CH.com=new Chart($("cComercio"),{type:"bar",data:{labels:[],datasets:[
+    {type:"line",label:"Participación acumulada",data:[],yAxisID:"y2",borderColor:css("--naranjo"),backgroundColor:css("--naranjo"),pointRadius:3,borderWidth:1.5},
+    {label:"Monto canjeado",data:[],backgroundColor:css("--ink-series"),borderRadius:3,maxBarThickness:34}]},
+    options:{...o4,scales:{...o4.scales,x:{...o4.scales.x,ticks:{...o4.scales.x.ticks,autoSkip:false,maxRotation:45,minRotation:0}},
+      y2:{position:"right",min:0,max:100,grid:{display:false},border:{display:false},ticks:{color:css("--muted"),font:{family:"Onest",size:11},callback:v=>v+"%"}}},
+      plugins:{...o4.plugins,tooltip:{...o4.plugins.tooltip,callbacks:{label:c=>c.dataset.yAxisID==="y2"?`Acumulado: ${c.parsed.y.toLocaleString("es-CL",{maximumFractionDigits:1})}%`:`Canjeado: ${fCLP(c.parsed.y)}`}}}}});
+  const o5=baseOpts();
+  CH.hist=new Chart($("cHist"),{type:"bar",data:{labels:[],datasets:[{label:"Nº de canjes",data:[],backgroundColor:css("--celeste"),borderRadius:3}]},
+    options:{...o5,plugins:{...o5.plugins,legend:{display:false},tooltip:{...o5.plugins.tooltip,callbacks:{label:c=>`${fN(c.parsed.y)} canjes`}}},
+      scales:{...o5.scales,y:{...o5.scales.y,ticks:{...o5.scales.y.ticks,callback:v=>fN(v)}}}}});
+}
+
+// ---------- Render ----------
+const BUCKETS=[[0,5000,"< $5 mil"],[5000,10000,"$5–10 mil"],[10000,15000,"$10–15 mil"],[15000,20000,"$15–20 mil"],[20000,30000,"$20–30 mil"],[30000,50000,"$30–50 mil"],[50000,100000,"$50–100 mil"],[100000,Infinity,"≥ $100 mil"]];
+function render(){
+  const R=compute();const{A,C,ab,nab,cj,ncj}=R;
+  const comActive=S.com.size<D.comercios.length||S.gift.size<D.giftcards.length;
+  $("noticeComercio").classList.toggle("on",comActive);
+  $("noticeEstado").classList.toggle("on",S.est.size<D.estados.length);
+
+  // KPIs
+  const rate=ab>0?cj/ab:null,saldo=ab-cj;
+  $("kAb").textContent=fShort(ab);$("kAbFull").textContent=fCLP(ab);
+  $("kCj").textContent=fShort(cj);$("kCjFull").textContent=fCLP(cj);
+  $("kRate").textContent=fPct(rate);
+  $("kSaldo").textContent=fShort(saldo);
+  $("kSaldoS").textContent=saldo<0?"Negativo: se canjeó más de lo abonado":"Abonado − Canjeado";
+  $("kNAb").textContent=fN(nab);$("kNAbS").textContent=nab?"Promedio "+fCLP(ab/nab):"";
+  $("kNCj").textContent=fN(ncj);$("kNCjS").textContent=ncj?"En "+fN(new Set(C.map(r=>r[2])).size)+" comercios":"";
+  $("kTicket").textContent=ncj?fCLP(cj/ncj):"—";
+
+  // Serie temporal
+  const keyOf=S.gran==="mes"?(i=>DAY[i].mk):S.gran==="semana"?(i=>DAY[i].wk):(i=>DAY[i].s);
+  const ts=new Map();const tget=k=>{let o=ts.get(k);if(!o){o={ab:0,cj:0,nab:0,ncj:0};ts.set(k,o);}return o;};
+  A.forEach(r=>{const o=tget(keyOf(r[0]));o.ab+=r[4];o.nab+=r[5];});
+  C.forEach(r=>{const o=tget(keyOf(r[0]));o.cj+=r[4]*r[5];o.ncj+=r[5];});
+  const tk=[...ts.keys()].sort();
+  CH.evol.data.labels=tk.map(k=>S.gran==="mes"?mLabel(k):k.split("-").reverse().join("/"));
+  CH.evol.data.datasets[0].data=tk.map(k=>ts.get(k).ab);
+  CH.evol.data.datasets[1].data=tk.map(k=>ts.get(k).cj);
+  CH.evol.update();
+
+  // Mensual (para % y tablas)
+  const mm=new Map();const mget=k=>{let o=mm.get(k);if(!o){o={ab:0,cj:0,nab:0,ncj:0};mm.set(k,o);}return o;};
+  A.forEach(r=>{const o=mget(DAY[r[0]].mk);o.ab+=r[4];o.nab+=r[5];});
+  C.forEach(r=>{const o=mget(DAY[r[0]].mk);o.cj+=r[4]*r[5];o.ncj+=r[5];});
+  const mk=[...mm.keys()].sort();
+  CH.rateMes.data.labels=mk.map(mLabel);
+  CH.rateMes.data.datasets[1].data=mk.map(k=>{const o=mm.get(k);return o.ab>0?+(o.cj/o.ab*100).toFixed(1):null;});
+  CH.rateMes.data.datasets[0].data=mk.map(()=>rate!=null?+(rate*100).toFixed(1):null);
+  CH.rateMes.update();
+
+  // Canal
+  const cm=new Map();const cget=k=>{let o=cm.get(k);if(!o){o={canal:D.canales[k],ab:0,cj:0,nab:0,ncj:0};cm.set(k,o);}return o;};
+  A.forEach(r=>{const o=cget(r[1]);o.ab+=r[4];o.nab+=r[5];});
+  C.forEach(r=>{const o=cget(r[1]);o.cj+=r[4]*r[5];o.ncj+=r[5];});
+  const canRows=[...cm.values()].map(o=>({...o,rate:o.ab>0?o.cj/o.ab:null,ticket:o.ncj?o.cj/o.ncj:null,share:cj?o.cj/cj:null}));
+  const cr=canRows.filter(o=>o.rate!=null).sort((a,b)=>b.rate-a.rate);
+  CH.rateCanal.data.labels=cr.map(o=>o.canal);CH.rateCanal.data.datasets[0].data=cr.map(o=>+(o.rate*100).toFixed(1));
+  CH.rateCanal.data.datasets[0].backgroundColor=cr.map(()=>css("--celeste"));CH.rateCanal.update();
+  renderTable("tCanal",[
+    {key:"canal",label:"Canal (PDV)"},{key:"ab",label:"Total abonado",num:1,fmt:fCLP},{key:"cj",label:"Total canjeado",num:1,fmt:fCLP,bar:1},
+    {key:"rate",label:"% de canje",num:1,fmt:fPct},{key:"share",label:"% del canje total",num:1,fmt:fPct},
+    {key:"nab",label:"Nº abonos",num:1,fmt:fN},{key:"ncj",label:"Nº canjes",num:1,fmt:fN},{key:"ticket",label:"Ticket promedio",num:1,fmt:fCLP}],
+    canRows,{sort:"cj",barMax:Math.max(0,...canRows.map(o=>o.cj)),forceSort:TBL._canalForce,onSort:()=>{}});
+  TBL._canalForce=null;
+
+  // Comercio
+  const com=groupBy(C,r=>r[2],(o,r)=>{o.cj+=r[4]*r[5];o.n+=r[5];o.min=Math.min(o.min,r[4]);o.max=Math.max(o.max,r[4]);},()=>({cj:0,n:0,min:Infinity,max:0}));
+  let comRows=[...com.entries()].map(([k,o])=>({comercio:D.comercios[k],cj:o.cj,n:o.n,share:cj?o.cj/cj:0,ticket:o.cj/o.n,min:o.min,max:o.max,ab:null,rate:null}))
+    .sort((a,b)=>b.cj-a.cj);
+  let acc=0;comRows.forEach((o,i)=>{acc+=o.cj;o.cum=cj?acc/cj:0;o.rank=i+1;});
+  const top=comRows.slice(0,15);
+  CH.com.data.labels=top.map(o=>o.comercio);CH.com.data.datasets[1].data=top.map(o=>o.cj);
+  CH.com.data.datasets[0].data=top.map(o=>+(o.cum*100).toFixed(1));CH.com.update();
+  const qc=$("qCom").value.trim().toLowerCase();
+  renderTable("tCom",[
+    {key:"rank",label:"#",num:1},{key:"comercio",label:"Comercio"},{key:"cj",label:"Total canjeado",num:1,fmt:fCLP,bar:1},
+    {key:"share",label:"Participación",num:1,fmt:fPct},{key:"cum",label:"Acumulado",num:1,fmt:fPct},
+    {key:"n",label:"Nº canjes",num:1,fmt:fN},{key:"ticket",label:"Ticket promedio",num:1,fmt:fCLP},
+    {key:"min",label:"Mínimo",num:1,fmt:fCLP},{key:"max",label:"Máximo",num:1,fmt:fCLP}],
+    comRows.filter(o=>!qc||o.comercio.toLowerCase().includes(qc)),{sort:"cj",pageSize:15,pager:"pCom",barMax:comRows[0]?.cj||0});
+
+  // Distribución
+  const hist=BUCKETS.map(()=>0);let mn=Infinity,mx=0;const amt=new Map();
+  C.forEach(r=>{const v=r[4];hist[BUCKETS.findIndex(b=>v>=b[0]&&v<b[1])]+=r[5];mn=Math.min(mn,v);mx=Math.max(mx,v);amt.set(v,(amt.get(v)||0)+r[5]);});
+  CH.hist.data.labels=BUCKETS.map(b=>b[2]);CH.hist.data.datasets[0].data=hist;CH.hist.update();
+  const sortedAmt=[...amt.entries()].sort((a,b)=>a[0]-b[0]);let med=null,cum=0;
+  for(const[v,n]of sortedAmt){cum+=n;if(cum>=ncj/2){med=v;break;}}
+  const mode=[...amt.entries()].sort((a,b)=>b[1]-a[1])[0];
+  $("sAvg").textContent=ncj?fCLP(cj/ncj):"—";$("sMed").textContent=med!=null?fCLP(med):"—";
+  $("sMin").textContent=ncj?fCLP(mn):"—";$("sMax").textContent=ncj?fCLP(mx):"—";
+  $("sMode").textContent=mode?fCLP(mode[0]):"—";$("sNCom").textContent=fN(com.size);
+
+  // Insights
+  const ins=[];
+  if(ab>0)ins.push(`La tasa de canje acumulada es de <b>${fPct(rate)}</b>: se canjearon ${fCLP(cj)} de ${fCLP(ab)} abonados.`);
+  if(ab>0)ins.push(saldo>=0?`El monto no canjeado es de ${fCLP(saldo)}, equivalente al <b>${fPct(saldo/ab)}</b> del total abonado.`
+    :`En el período filtrado el monto canjeado supera al abonado en ${fCLP(-saldo)} (<b>${fPct(-saldo/ab)}</b> del total abonado). El archivo no permite identificar el origen de ese saldo, por ejemplo puntos abonados antes de ${D.corte.abonos[0].split("-").reverse().join("/")}.`);
+  if(comRows[0])ins.push(`${comRows[0].comercio} concentra el <b>${fPct(comRows[0].share)}</b> del monto total canjeado.`);
+  if(comRows.length>5)ins.push(`Los 5 principales comercios concentran el <b>${fPct(comRows[4].cum)}</b> del total canjeado, entre ${fN(comRows.length)} comercios con canjes.`);
+  const mMax=mk.filter(k=>mm.get(k).cj>0).sort((a,b)=>mm.get(b).cj-mm.get(a).cj)[0];
+  if(mMax)ins.push(`El mes con mayor volumen de canjes fue <b>${MESES[+mMax.slice(5)-1].toLowerCase()} de ${mMax.slice(0,4)}</b>, con ${fCLP(mm.get(mMax).cj)} en ${fN(mm.get(mMax).ncj)} canjes.`);
+  if(ncj)ins.push(`El ticket promedio de canje es de <b>${fCLP(cj/ncj)}</b>; la mediana es ${fCLP(med)} y el monto más frecuente es ${fCLP(mode[0])} (${fPct(mode[1]/ncj)} de los canjes).`);
+  if(cr.length>1)ins.push(`Por canal, la mayor tasa de canje la presenta <b>${cr[0].canal}</b> (${fPct(cr[0].rate)}) y la menor <b>${cr[cr.length-1].canal}</b> (${fPct(cr[cr.length-1].rate)}).`);
+  const bigCanal=[...canRows].sort((a,b)=>b.cj-a.cj)[0];
+  if(bigCanal&&cj&&canRows.length>1)ins.push(`El canal <b>${bigCanal.canal}</b> reúne el ${fPct(bigCanal.cj/cj)} del monto canjeado y el ${fPct(ab?bigCanal.ab/ab:null)} del abonado.`);
+  $("insights").innerHTML=ins.length?ins.slice(0,8).map(t=>`<li>${t}</li>`).join(""):`<li>No hay datos para los filtros seleccionados.</li>`;
+
+  // Tabla detallada
+  renderDetail(A,C);
+}
+
+function renderDetail(A,C){
+  const g=$("gTabla").value.split(","),q=$("qTabla").value.trim().toLowerCase();
+  const dimVal={mes:(r)=>DAY[r[0]].mk,canal:r=>D.canales[r[1]]};
+  const abSide=!g.includes("comercio"),cjSide=!g.includes("campana");
+  const m=new Map();const get=(vals)=>{const k=vals.join("|");let o=m.get(k);if(!o){o={ab:abSide?0:null,cj:cjSide?0:null,nab:abSide?0:null,ncj:cjSide?0:null};g.forEach((d,i)=>o[d]=vals[i]);m.set(k,o);}return o;};
+  if(abSide)A.forEach(r=>{const o=get(g.map(d=>d==="campana"?D.campanas[r[3]]:dimVal[d](r)));o.ab+=r[4];o.nab+=r[5];});
+  if(cjSide)C.forEach(r=>{const o=get(g.map(d=>d==="comercio"?D.comercios[r[2]]:dimVal[d](r)));o.cj+=r[4]*r[5];o.ncj+=r[5];});
+  let rows=[...m.values()].map(o=>({...o,rate:(o.ab&&o.cj!=null)?o.cj/o.ab:null,mesL:o.mes}));
+  if(q)rows=rows.filter(o=>g.some(d=>String(o[d]).toLowerCase().includes(q)));
+  const L={mes:"Mes",canal:"Canal (PDV)",comercio:"Comercio",campana:"Concepto de abono"};
+  const cols=g.map(d=>({key:d,label:L[d],fmt:d==="mes"?(v=>MESES[+v.slice(5)-1]+" "+v.slice(0,4)):null}))
+    .concat([{key:"ab",label:"Total abonado",num:1,fmt:fCLP},{key:"cj",label:"Total canjeado",num:1,fmt:fCLP},
+      {key:"rate",label:"% canje",num:1,fmt:fPct},{key:"nab",label:"Nº abonos",num:1,fmt:fN},{key:"ncj",label:"Nº canjes",num:1,fmt:fN}]);
+  const key="tDet:"+g.join(",");
+  if(TBL.tDetKey!==key){delete TBL.tDet;TBL.tDetKey=key;}
+  renderTable("tDet",cols,rows,{sort:g[0]==="mes"?"mes":(cjSide?"cj":"ab"),dir:g[0]==="mes"?"desc":"desc",pageSize:20,pager:"pDet"});
+}
+
+function initUI(){
+  $("gran").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;S.gran=b.dataset.g;
+    $("gran").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));render();});
+  $("rankCanal").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+    $("rankCanal").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));TBL._canalForce=b.dataset.k;render();});
+  $("qCom").addEventListener("input",()=>{if(TBL.tCom)TBL.tCom.page=0;render();});
+  $("qTabla").addEventListener("input",()=>{if(TBL.tDet)TBL.tDet.page=0;render();});
+  $("gTabla").addEventListener("change",render);
+  const f=s=>s.split("-").reverse().join("/");
+  $("period").textContent=`Abonos: ${f(D.corte.abonos[0])} a ${f(D.corte.abonos[1])}. Canjes: ${f(D.corte.canjes[0])} a ${f(D.corte.canjes[1])}. Montos en pesos chilenos (1 punto = $1).`;
+  const qa=D.qa;
+  $("method").innerHTML=[
+    `<b>Fuentes:</b> pestaña <i>abonos</i> (${fN(qa.abonos_filas)} registros; monto = columna <i>puntos</i>) y pestaña <i>canjes</i> (${fN(qa.canjes_filas)} registros; monto = columna <i>monto</i>). Se asume equivalencia 1 punto = $1, ya que ambas columnas usan la misma escala.`,
+    `<b>% de canje</b> = Total canjeado ÷ Total abonado × 100, calculado sobre los datos filtrados. <b>Saldo no canjeado</b> = Total abonado − Total canjeado. <b>Ticket promedio</b> = Total canjeado ÷ Nº de canjes.`,
+    `<b>Relación entre pestañas:</b> no existe una clave de operación común. Ambas se relacionan por fecha y, de forma interna, por el identificador del usuario, que se usa solo para atribuir cada canje al canal (PDV) donde el usuario recibió más puntos (${fN(qa.usuarios_multi_canal)} usuarios recibieron abonos en más de un canal). Todos los canjes tienen un usuario con abonos registrados.`,
+    `<b>Comercio</b> solo existe en canjes (columna <i>empresa</i>). Por eso no es posible calcular total abonado ni % de canje por comercio. Se unificaron variantes de escritura: Super_10 → Super 10; Mayorista_10 y Mayorista10 → Mayorista 10. <b>Red giftcard</b> corresponde a la columna <i>giftcard</i>.`,
+    `<b>Sucursal:</b> el archivo no contiene sucursales de comercio. Se usa <i>nombre pdv</i> de abonos como canal; ${fN(qa.abonos_sin_pdv)} abonos sin PDV aparecen como “Sin PDV asignado”. La columna <i>vista</i> mezcla códigos numéricos y textos libres, por lo que no se usó como dimensión.`,
+    `<b>Estado del abono</b> (<i>ultimo_estado</i>): “Puntos cargados” o “Pendiente”. Por defecto se incluyen ambos.`,
+    `<b>Calidad de datos:</b> ${fN(qa.abonos_duplicados_exactos)} abonos son idénticos a otro en todas las columnas salvo el Id; se mantienen porque tienen Id distinto y pueden ser cargas legítimas. ${fN(qa.canjes_monto_menor_1000)} canjes tienen monto menor a $1.000 (mínimo $1). Los textos con acentos mal codificados se corrigieron. Fechas y montos no presentan nulos. Las columnas de abonos id_empresa, registrado, listado, aceptado, contrato y transferencia tienen un único valor y no aportan análisis.`,
+    `<b>Privacidad:</b> RUT, nombre, email, usuario e Id no se incluyen en el dashboard. ${fN(qa.conceptos_anonimizados||0)} abonos tenían el nombre de una persona en la descripción; esas descripciones se reemplazaron por “Concepto con dato personal (anonimizado)”. Los datos se publican agregados por día, canal, comercio y monto.`
+  ].map(t=>`<li>${t}</li>`).join("");
+}
+
+initFilters();initUI();initCharts();render();
+</script>
+</body>
+</html>
